@@ -432,7 +432,8 @@ void CAM_OutUp(void) { KeyUp(&cam_out); }
 void CAM_ToThirdPerson(void)
 {
 	Vector viewangles;
-
+/*
+//Test test (Enable third person in multiplayer)
 #if !defined(_DEBUG)
 	if (gEngfuncs.GetMaxClients() > 1)
 	{
@@ -440,7 +441,7 @@ void CAM_ToThirdPerson(void)
 		return;
 	}
 #endif
-
+*/
 	gEngfuncs.GetViewAngles((float *)viewangles);
 
 	if (!cam_thirdperson)
