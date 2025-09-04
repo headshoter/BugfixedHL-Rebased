@@ -155,7 +155,7 @@ void CL_DLLEXPORT CAM_Think(void)
 
 	static ConVarRef sv_cheats("sv_cheats");
 
-.	// disabled to allow third person without sv_cheats	
+ 	// disabled to allow third person without sv_cheats	
 	//if (gEngfuncs.GetMaxClients() > 1 && CL_IsThirdPerson() && !sv_cheats.GetBool())
 	//	CAM_ToFirstPerson();
 
