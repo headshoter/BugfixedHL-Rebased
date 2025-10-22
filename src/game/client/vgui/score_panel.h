@@ -93,6 +93,7 @@ private:
 		int iFrags = 0;
 		int iDeaths = 0;
 		int iPlayerCount = 0;
+		int iAssists = 0;
 	};
 
 	struct PlayerData

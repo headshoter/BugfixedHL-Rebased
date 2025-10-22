@@ -507,18 +507,18 @@ void CScorePanel::CreateSection(int nTeamID)
 		    m_iColumnWidthEff);
 	}
 
-    // Frags
-    m_pPlayerList->AddColumnToSection(nTeamID, "frags", nTeamID == HEADER_SECTION_ID ? "#PlayerScore" : "???",
-        vgui2::SectionedListPanel::COLUMN_BRIGHT,
-        m_iColumnWidthFrags);
+	// Frags
+	m_pPlayerList->AddColumnToSection(nTeamID, "frags", nTeamID == HEADER_SECTION_ID ? "#PlayerScore" : "???",
+	    vgui2::SectionedListPanel::COLUMN_BRIGHT,
+	    m_iColumnWidthFrags);
 
-    // Assists (new)
-    m_pPlayerList->AddColumnToSection(nTeamID, "assists", nTeamID == HEADER_SECTION_ID ? "A" : "",
-        vgui2::SectionedListPanel::COLUMN_BRIGHT,
-        m_iColumnWidthDeaths);
+	// Assists (new)
+	m_pPlayerList->AddColumnToSection(nTeamID, "assists", nTeamID == HEADER_SECTION_ID ? "A" : "",
+	    vgui2::SectionedListPanel::COLUMN_BRIGHT,
+	    m_iColumnWidthDeaths);
 
-    // Deaths
-    m_pPlayerList->AddColumnToSection(nTeamID, "deaths", nTeamID == HEADER_SECTION_ID ? "#PlayerDeath" : "???",
+	// Deaths
+	m_pPlayerList->AddColumnToSection(nTeamID, "deaths", nTeamID == HEADER_SECTION_ID ? "#PlayerDeath" : "???",
         vgui2::SectionedListPanel::COLUMN_BRIGHT,
         m_iColumnWidthDeaths);
 
@@ -711,6 +711,7 @@ void CScorePanel::UpdateScoresAndCounts()
 		td.iPlayerCount = 0;
 		td.iFrags = 0;
 		td.iDeaths = 0;
+		td.iAssists = 0;
 	}
 
 	// Refresh scores
@@ -726,6 +727,7 @@ void CScorePanel::UpdateScoresAndCounts()
 		TeamData &td = m_TeamData[pi->GetTeamNumber()];
 		td.iFrags += pi->GetFrags();
 		td.iDeaths += pi->GetDeaths();
+		td.iAssists += pi->GetAssists();
 		td.iPlayerCount++;
 
 		iPlayerCount++;
@@ -767,6 +769,11 @@ void CScorePanel::UpdateScoresAndCounts()
 		snprintf(buf, sizeof(buf), "%d", td.iFrags);
 		g_pVGuiLocalize->ConvertANSIToUnicode(buf, wbuf, sizeof(wbuf));
 		m_pPlayerList->ModifyColumn(nTeamID, "frags", wbuf);
+
+		// Team assists
+		snprintf(buf, sizeof(buf), "%d", td.iAssists);
+		g_pVGuiLocalize->ConvertANSIToUnicode(buf, wbuf, sizeof(wbuf));
+		m_pPlayerList->ModifyColumn(nTeamID, "assists", wbuf);
 
 		// Team deaths
 		snprintf(buf, sizeof(buf), "%d", td.iDeaths);
