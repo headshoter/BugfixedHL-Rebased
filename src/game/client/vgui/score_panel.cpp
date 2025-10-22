@@ -196,6 +196,17 @@ void CScorePanel::EnableMousePointer(bool bEnable)
 	vgui2::input()->SetCursorPos(x, y);
 }
 
+bool CScorePanel::SetShowAssists(bool show)
+{
+	if (m_bShowAssists == show)
+		return false;
+
+	m_bShowAssists = show;
+	RefreshItems();
+	UpdateAllClients();
+	return true;
+}
+
 void CScorePanel::UpdateOnPlayerInfo(int client)
 {
 	if (!IsVisible())
@@ -388,6 +399,8 @@ void CScorePanel::RefreshItems()
 		TeamData &td = m_TeamData[pd.nTeamID];
 		td.iFrags += pi->GetFrags();
 		td.iDeaths += pi->GetDeaths();
+		if (m_bShowAssists)
+			td.iAssists += pi->GetAssists();
 		td.iPlayerCount++;
 	}
 
@@ -513,9 +526,12 @@ void CScorePanel::CreateSection(int nTeamID)
 	    m_iColumnWidthFrags);
 
 	// Assists (new)
-	m_pPlayerList->AddColumnToSection(nTeamID, "assists", nTeamID == HEADER_SECTION_ID ? "A" : "",
-	    vgui2::SectionedListPanel::COLUMN_BRIGHT,
-	    m_iColumnWidthDeaths);
+	if (m_bShowAssists)
+	{
+		m_pPlayerList->AddColumnToSection(nTeamID, "assists", nTeamID == HEADER_SECTION_ID ? "A" : "",
+		    vgui2::SectionedListPanel::COLUMN_BRIGHT,
+		    m_iColumnWidthDeaths);
+	}
 
 	// Deaths
 	m_pPlayerList->AddColumnToSection(nTeamID, "deaths", nTeamID == HEADER_SECTION_ID ? "#PlayerDeath" : "???",
@@ -630,8 +646,11 @@ void CScorePanel::UpdateClientInfo(int client)
 		playerKv->SetString("eff", buf);
 
 		// Frags & deaths
-        playerKv->SetInt("frags", pi->GetFrags());
-        playerKv->SetInt("assists", pi->GetAssists());
+		playerKv->SetInt("frags", pi->GetFrags());
+		if (m_bShowAssists)
+		{
+			playerKv->SetInt("assists", pi->GetAssists());
+		}
 		playerKv->SetInt("deaths", pi->GetDeaths());
 
 		// Ping
@@ -727,7 +746,8 @@ void CScorePanel::UpdateScoresAndCounts()
 		TeamData &td = m_TeamData[pi->GetTeamNumber()];
 		td.iFrags += pi->GetFrags();
 		td.iDeaths += pi->GetDeaths();
-		td.iAssists += pi->GetAssists();
+		if (m_bShowAssists)
+			td.iAssists += pi->GetAssists();
 		td.iPlayerCount++;
 
 		iPlayerCount++;
@@ -770,10 +790,13 @@ void CScorePanel::UpdateScoresAndCounts()
 		g_pVGuiLocalize->ConvertANSIToUnicode(buf, wbuf, sizeof(wbuf));
 		m_pPlayerList->ModifyColumn(nTeamID, "frags", wbuf);
 
-		// Team assists
-		snprintf(buf, sizeof(buf), "%d", td.iAssists);
-		g_pVGuiLocalize->ConvertANSIToUnicode(buf, wbuf, sizeof(wbuf));
-		m_pPlayerList->ModifyColumn(nTeamID, "assists", wbuf);
+		if (m_bShowAssists)
+		{
+			// Team assists
+			snprintf(buf, sizeof(buf), "%d", td.iAssists);
+			g_pVGuiLocalize->ConvertANSIToUnicode(buf, wbuf, sizeof(wbuf));
+			m_pPlayerList->ModifyColumn(nTeamID, "assists", wbuf);
+		}
 
 		// Team deaths
 		snprintf(buf, sizeof(buf), "%d", td.iDeaths);

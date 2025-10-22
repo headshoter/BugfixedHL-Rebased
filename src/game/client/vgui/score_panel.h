@@ -39,6 +39,12 @@ public:
 	void EnableMousePointer(bool bEnable);
 
 	/**
+	 * Enables or disables assists column.
+	 * @return true if state changed.
+	 */
+	bool SetShowAssists(bool show);
+
+	/**
 	 * Updates player's score in the scoreboard.
 	 */
 	void UpdateOnPlayerInfo(int client);
@@ -133,6 +139,7 @@ private:
 	int m_iKillerIndex = 0;
 	float m_flKillerHighlightStart = 0;
 	float m_flLastUpdateTime = 0;
+	bool m_bShowAssists = false;
 
 	Color m_ThisPlayerBgColor = Color(0, 0, 0, 0);
 	Color m_KillerBgColor = Color(0, 0, 0, 0);

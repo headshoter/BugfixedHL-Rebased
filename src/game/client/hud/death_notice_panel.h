@@ -15,7 +15,7 @@ public:
 	void InitHudData() override;
 	void Think() override;
 
-	void AddItem(int killerId, int victimId, const char *killedwith);
+	void AddItem(int killerId, int victimId, const char *killedwith, int assisterId = 0);
 
 	void ApplySettings(KeyValues *inResourceData) override;
 	void PaintBackground() override;

@@ -622,35 +622,41 @@ void CClientViewport::MsgFunc_ServerName(const char *pszName, int iSize, void *p
 
 void CClientViewport::MsgFunc_ScoreInfo(const char *pszName, int iSize, void *pbuf)
 {
-    BEGIN_READ(pbuf, iSize);
-    short cl = READ_BYTE();
-    short frags = READ_SHORT();
-    short deaths = READ_SHORT();
-    short playerclass = READ_SHORT();
-    short teamnumber = READ_SHORT();
-    short assists = 0;
-    if (READ_REMAINING() >= 2)
-    {
-        assists = READ_SHORT();
-    }
+	BEGIN_READ(pbuf, iSize);
+	short cl = READ_BYTE();
+	short frags = READ_SHORT();
+	short deaths = READ_SHORT();
+	short playerclass = READ_SHORT();
+	short teamnumber = READ_SHORT();
 
-    if (cl > 0 && cl <= MAX_PLAYERS)
-    {
-        CPlayerInfo *info = GetPlayerInfo(cl)->Update();
-        info->m_ExtraInfo.frags = frags;
-        info->m_ExtraInfo.deaths = deaths;
-        info->m_ExtraInfo.playerclass = playerclass;
-        info->m_ExtraInfo.teamnumber = clamp(teamnumber, 0, MAX_TEAMS);
-        // Store assists if available
-        *(short *)&info->m_ExtraInfo.health = info->m_ExtraInfo.health; // no-op to avoid unused warning
-        // Extend extra info via reserved/unused fields is not ideal; add explicit field instead.
-        // We'll set through a new member when available in struct.
-        // For backward compatibility, if struct doesn't have assists yet, ignore.
-        // See player_info.h change.
-        info->m_ExtraInfo.assists = assists;
+	bool hasAssistField = READ_REMAINING() >= 2;
+	short assists = 0;
+	if (hasAssistField)
+	{
+		assists = READ_SHORT();
+	}
 
-        UpdateOnPlayerInfo(cl);
-    }
+	if (m_pScorePanel)
+	{
+		m_pScorePanel->SetShowAssists(hasAssistField);
+	}
+
+	if (!hasAssistField)
+	{
+		assists = 0;
+	}
+
+	if (cl > 0 && cl <= MAX_PLAYERS)
+	{
+		CPlayerInfo *info = GetPlayerInfo(cl)->Update();
+		info->m_ExtraInfo.frags = frags;
+		info->m_ExtraInfo.deaths = deaths;
+		info->m_ExtraInfo.playerclass = playerclass;
+		info->m_ExtraInfo.teamnumber = clamp(teamnumber, 0, MAX_TEAMS);
+		info->m_ExtraInfo.assists = assists;
+
+		UpdateOnPlayerInfo(cl);
+	}
 }
 
 void CClientViewport::MsgFunc_TeamScore(const char *pszName, int iSize, void *pbuf)

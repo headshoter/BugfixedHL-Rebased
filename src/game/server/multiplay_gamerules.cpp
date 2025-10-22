@@ -43,6 +43,9 @@ ConVar mp_weapondrop_type("mp_weapondrop_type", "0", 0, "Sets drop behavior for 
     " +32 - ammo: drop none\n"
     "  Flags can be combined (sum values).");
 
+ConVar bhl_assist("bhl_assist", "0", FCVAR_SERVER, "Enable kill assist tracking");
+ConVar bhl_assist_ratio("bhl_assist_ratio", "0.60", FCVAR_SERVER, "Damage ratio required to award a kill assist (0-1)");
+
 extern DLL_GLOBAL CGameRules *g_pGameRules;
 extern DLL_GLOBAL BOOL g_fGameOver;
 extern int gmsgDeathMsg; // client dll messages
@@ -151,6 +154,11 @@ BOOL CHalfLifeMultiplay::ClientCommand(CBasePlayer *pPlayer, const char *pcmd)
 	}
 
 	return CGameRules::ClientCommand(pPlayer, pcmd);
+}
+
+bool CHalfLifeMultiplay::AreAssistsEnabled() const
+{
+	return bhl_assist.GetBool();
 }
 
 //=========================================================
@@ -790,53 +798,65 @@ void CHalfLifeMultiplay::DeathNotice(CBasePlayer *pVictim, entvars_t *pKiller, e
 	else if (strncmp(killer_weapon_name, "func_", 5) == 0)
 		killer_weapon_name += 5;
 
-    // Determine assister (highest damage dealer besides killer above threshold)
-    int assister_index = 0;
-    if (pVictim)
-    {
-        // Threshold is percent of max health
-        static ConVar mp_assist_threshold("mp_assist_threshold", "0.6", FCVAR_SERVER, "Assist damage threshold as fraction of victim max health");
-        float threshold = clamp(mp_assist_threshold.GetFloat(), 0.0f, 1.0f) * pVictim->pev->max_health;
+	// Determine assister (highest damage dealer besides killer above threshold)
+	int assister_index = 0;
+	if (pVictim)
+	{
+		if (AreAssistsEnabled())
+		{
+			float ratio = bhl_assist_ratio.GetFloat();
+			if (ratio < 0.0f)
+				ratio = 0.0f;
+			else if (ratio > 1.0f)
+				ratio = 1.0f;
 
-        float bestDamage = 0.0f;
-        for (int i = 1; i <= gpGlobals->maxClients; ++i)
-        {
-            if (i == killer_index)
-                continue;
-            float dmg = pVictim->m_rgAssistDamage[i];
-            if (dmg > bestDamage)
-            {
-                bestDamage = dmg;
-                assister_index = i;
-            }
-        }
+			float maxHealth = pVictim->pev->max_health > 0 ? pVictim->pev->max_health : 100.0f;
+			float threshold = ratio * maxHealth;
 
-        if (bestDamage < threshold)
-        {
-            assister_index = 0;
-        }
-        else if (assister_index != 0)
-        {
-            // Credit assist
-            CBasePlayer *pAssister = (CBasePlayer *)UTIL_PlayerByIndex(assister_index);
-            if (pAssister)
-            {
-                pAssister->m_iAssists += 1;
-                pAssister->SendScoreInfo();
-            }
-        }
+			float bestDamage = 0.0f;
+			for (int i = 1; i <= gpGlobals->maxClients; ++i)
+			{
+				if (i == killer_index)
+					continue;
+				float dmg = pVictim->m_rgAssistDamage[i];
+				if (dmg > bestDamage)
+				{
+					bestDamage = dmg;
+					assister_index = i;
+				}
+			}
 
-        // Reset victim's assist tracking on death
-        pVictim->ResetAssistTracking();
-    }
+			if (bestDamage < threshold)
+			{
+				assister_index = 0;
+			}
+			else if (assister_index != 0)
+			{
+				// Credit assist
+				CBasePlayer *pAssister = (CBasePlayer *)UTIL_PlayerByIndex(assister_index);
+				if (pAssister && pAssister->IsConnected())
+				{
+					pAssister->m_iAssists += 1;
+					pAssister->SendScoreInfo();
+				}
+			}
+		}
+		else
+		{
+			assister_index = 0;
+		}
 
-    MESSAGE_BEGIN(MSG_ALL, gmsgDeathMsg);
-    WRITE_BYTE(killer_index); // the killer
-    WRITE_BYTE(ENTINDEX(pVictim->edict())); // the victim
-    WRITE_STRING(killer_weapon_name); // what they were killed by (should this be a string?)
-    // Optional assister index at the end for clients that support it
-    WRITE_BYTE(assister_index);
-    MESSAGE_END();
+		// Reset victim's assist tracking on death
+		pVictim->ResetAssistTracking();
+	}
+
+	MESSAGE_BEGIN(MSG_ALL, gmsgDeathMsg);
+	WRITE_BYTE(killer_index); // the killer
+	WRITE_BYTE(ENTINDEX(pVictim->edict())); // the victim
+	WRITE_STRING(killer_weapon_name); // what they were killed by (should this be a string?)
+	// Optional assister index at the end for clients that support it
+	WRITE_BYTE(assister_index);
+	MESSAGE_END();
 
 	// replace the code names with the 'real' names
 	if (!strcmp(killer_weapon_name, "egon"))

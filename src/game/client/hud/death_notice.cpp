@@ -49,6 +49,22 @@ ConVar hud_deathnotice_color("hud_deathnotice_color", "255 80 0", FCVAR_BHL_ARCH
 ConVar hud_deathnotice_color_tk("hud_deathnotice_color_tk", "10 240 10", FCVAR_BHL_ARCHIVE, "Color of death notice teamkill sprite");
 ConVar hud_deathnotice_draw_always("hud_deathnotice_draw_always", "0", FCVAR_BHL_ARCHIVE, "Display the kill feed even when hud_draw is 0. Useful when recording frag movies.");
 
+static constexpr int ASSIST_SOUND_PITCH = PITCH_NORM + 20;
+
+static void PlayKillfeedSoundWithPitch(const char *sample, float volume, int pitch)
+{
+	if (!sample || !*sample || volume <= 0)
+		return;
+
+	cl_entity_t *local = gEngfuncs.GetLocalPlayer();
+	float origin[3] = { 0.0f, 0.0f, 0.0f };
+	int entIndex = local ? local->index : 0;
+	if (gEngfuncs.pEventAPI)
+	{
+		gEngfuncs.pEventAPI->EV_PlaySound(entIndex, origin, CHAN_ITEM, sample, volume, ATTN_NONE, SND_CHANGE_PITCH, pitch);
+	}
+}
+
 #define MAX_DEATHNOTICES 4
 static int DEATHNOTICE_DISPLAY_TIME = 6;
 
@@ -162,6 +178,7 @@ int CHudDeathNotice::MsgFunc_DeathMsg(const char *pszName, int iSize, void *pbuf
 	m_iFlags |= HUD_ACTIVE;
 
 	BEGIN_READ(pbuf, iSize);
+	int localPlayerIndex = GetThisPlayerInfo()->GetIndex();
 
     int killer = READ_BYTE();
     int victim = READ_BYTE();
@@ -186,7 +203,7 @@ int CHudDeathNotice::MsgFunc_DeathMsg(const char *pszName, int iSize, void *pbuf
 	CHudSpectator::Get()->DeathMessage(victim);
 
 	if (hud_deathnotice_vgui.GetBool() && CHudDeathNoticePanel::Get())
-		CHudDeathNoticePanel::Get()->AddItem(killer, victim, killedwith);
+		CHudDeathNoticePanel::Get()->AddItem(killer, victim, killedwith, assister);
 
 	int i;
 	for (i = 0; i < MAX_DEATHNOTICES; i++)
@@ -301,9 +318,13 @@ int CHudDeathNotice::MsgFunc_DeathMsg(const char *pszName, int iSize, void *pbuf
 	{
 		PlaySound(cl_killsound_path.GetString(), cl_killsound.GetFloat());
 	}
+	else if (assister > 0 && assister == localPlayerIndex && !rgDeathNoticeList[i].iNonPlayerKill && !rgDeathNoticeList[i].iSuicide && cl_killsound.GetFloat() > 0)
+	{
+		PlayKillfeedSoundWithPitch(cl_killsound_path.GetString(), cl_killsound.GetFloat(), ASSIST_SOUND_PITCH);
+	}
 
 	// Set color of own kills/deaths to yellow
-	if (killer == GetThisPlayerInfo()->GetIndex() || victim == GetThisPlayerInfo()->GetIndex())
+	if (killer == localPlayerIndex || victim == localPlayerIndex)
 		console::SetColor(ConColor::Yellow);
 
 	// Print to console

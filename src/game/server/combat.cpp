@@ -37,6 +37,7 @@ extern DLL_GLOBAL int g_iSkillLevel;
 
 extern Vector VecBModelOrigin(entvars_t *pevBModel);
 extern entvars_t *g_pevLastInflictor;
+extern DLL_GLOBAL CGameRules *g_pGameRules;
 
 #define GERMAN_GIB_COUNT 4
 #define HUMAN_GIB_COUNT  6
@@ -864,12 +865,12 @@ int CBaseMonster ::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, f
         pev->dmg_take += flTake;
 
         // Track per-attacker damage on players for assist calculation
-        if (pevAttacker && (pevAttacker->flags & FL_CLIENT))
-        {
-            int attackerIdx = ENTINDEX(ENT(pevAttacker));
-            if (attackerIdx >= 1 && attackerIdx <= gpGlobals->maxClients)
-            {
-                CBasePlayer *pVictimPlayer = static_cast<CBasePlayer *>(this);
+		if (g_pGameRules && g_pGameRules->AreAssistsEnabled() && pevAttacker && (pevAttacker->flags & FL_CLIENT))
+		{
+			int attackerIdx = ENTINDEX(ENT(pevAttacker));
+			if (attackerIdx >= 1 && attackerIdx <= gpGlobals->maxClients)
+			{
+				CBasePlayer *pVictimPlayer = static_cast<CBasePlayer *>(this);
                 // Do not count self-damage for assists
                 if (attackerIdx != ENTINDEX(edict()))
                 {

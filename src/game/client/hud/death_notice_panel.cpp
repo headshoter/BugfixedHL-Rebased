@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <string>
+#include <cstdio>
 #include <tier1/strtools.h>
 #include <vgui/ISurface.h>
 #include "hud.h"
@@ -80,7 +82,7 @@ void CHudDeathNoticePanel::Think()
 	}
 }
 
-void CHudDeathNoticePanel::AddItem(int killerId, int victimId, const char *killedwith)
+void CHudDeathNoticePanel::AddItem(int killerId, int victimId, const char *killedwith, int assisterId)
 {
 	if (!GetThisPlayerInfo())
 	{
@@ -90,8 +92,51 @@ void CHudDeathNoticePanel::AddItem(int killerId, int victimId, const char *kille
 
 	Entry e;
 	CPlayerInfo *killer = GetPlayerInfoSafe(killerId);
+	CPlayerInfo *assister = nullptr;
+	if (assisterId > 0 && assisterId != killerId)
+	{
+		assister = GetPlayerInfoSafe(assisterId);
+		if (assister && !assister->IsConnected())
+			assister = nullptr;
+	}
 	CPlayerInfo *victim = GetPlayerInfoSafe(victimId);
 	int thisPlayerId = GetThisPlayerInfo()->GetIndex();
+	bool isTeamplay = gHUD.m_Teamplay != 0;
+
+	auto getDisplayNameSafe = [](CPlayerInfo *player) -> std::string {
+		if (!player)
+			return std::string();
+
+		bool strip = player->GetTeamNumber() != 0;
+		return std::string(player->GetDisplayName(strip));
+	};
+
+	auto mapTeamToColorCode = [](int team) -> int {
+		switch (team)
+		{
+		case 1:
+			return 4; // blue
+		case 2:
+			return 1; // red
+		case 3:
+			return 3; // yellow
+		case 4:
+			return 2; // green
+		default:
+			return 8; // white
+		}
+	};
+
+	auto formatPlayerName = [&](CPlayerInfo *player) -> std::string {
+		std::string name = getDisplayNameSafe(player);
+		if (!isTeamplay || !player || name.empty())
+			return name;
+
+		const int colorCode = mapTeamToColorCode(player->GetTeamNumber());
+		char prefix[4];
+		snprintf(prefix, sizeof(prefix), "^%d", colorCode);
+		return std::string(prefix) + name + "^0";
+	};
 
 	// Check for suicide
 	if (killerId == victimId || killerId == 0)
@@ -119,23 +164,40 @@ void CHudDeathNoticePanel::AddItem(int killerId, int victimId, const char *kille
 	// Fill killer info
 	if (killer && !e.bIsSuicide)
 	{
-		bool removeColorCodes = killer->GetTeamNumber() != 0;
-		e.iKillerLen = Q_UTF8ToWString(killer->GetDisplayName(removeColorCodes), e.wszKiller, sizeof(e.wszKiller), STRINGCONVERT_REPLACE);
+		std::string killerName = formatPlayerName(killer);
+		if (assister)
+		{
+			std::string assistName = formatPlayerName(assister);
+			if (!assistName.empty())
+			{
+				if (!killerName.empty())
+				{
+					killerName += " + ";
+					killerName += assistName;
+				}
+				else
+				{
+					killerName = assistName;
+				}
+			}
+		}
+
+		e.iKillerLen = Q_UTF8ToWString(killerName.c_str(), e.wszKiller, sizeof(e.wszKiller), STRINGCONVERT_REPLACE);
 		e.iKillerLen /= sizeof(wchar_t);
 		e.iKillerLen--; // L'\0'
 		e.iKillerWide = GetColoredTextWide(e.wszKiller, e.iKillerLen);
-		e.killerColor = gHUD.GetClientColor(killerId, nameColor);
+		e.killerColor = isTeamplay ? nameColor : gHUD.GetClientColor(killerId, nameColor);
 	}
 
 	// Fill victim info
 	if (victim)
 	{
-		bool removeColorCodes = victim->GetTeamNumber() != 0;
-		e.iVictimLen = Q_UTF8ToWString(victim->GetDisplayName(removeColorCodes), e.wszVictim, sizeof(e.wszVictim), STRINGCONVERT_REPLACE);
+		std::string victimName = formatPlayerName(victim);
+		e.iVictimLen = Q_UTF8ToWString(victimName.c_str(), e.wszVictim, sizeof(e.wszVictim), STRINGCONVERT_REPLACE);
 		e.iVictimLen /= sizeof(wchar_t);
 		e.iVictimLen--; // L'\0'
 		e.iVictimWide = GetColoredTextWide(e.wszVictim, e.iVictimLen);
-		e.victimColor = gHUD.GetClientColor(victimId, nameColor);
+		e.victimColor = isTeamplay ? nameColor : gHUD.GetClientColor(victimId, nameColor);
 	}
 
 	// Expiration time

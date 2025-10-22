@@ -1663,15 +1663,18 @@ void CBasePlayer::StopWelcomeCam(void)
 
 void CBasePlayer::SendScoreInfo()
 {
-    MESSAGE_BEGIN(MSG_ALL, gmsgScoreInfo);
-    WRITE_BYTE(ENTINDEX(edict())); // Player index
-    WRITE_SHORT(pev->frags); // Score
-    WRITE_SHORT(m_iDeaths); // Deaths
-    WRITE_SHORT(0); // TFC class
-    WRITE_SHORT(g_pGameRules->GetTeamIndex(m_szTeamName) + 1); // Team index
-    // Optional trailing field: assists (clients that understand will read it)
-    WRITE_SHORT(m_iAssists);
-    MESSAGE_END();
+	MESSAGE_BEGIN(MSG_ALL, gmsgScoreInfo);
+	WRITE_BYTE(ENTINDEX(edict())); // Player index
+	WRITE_SHORT(pev->frags); // Score
+	WRITE_SHORT(m_iDeaths); // Deaths
+	WRITE_SHORT(0); // TFC class
+	WRITE_SHORT(g_pGameRules->GetTeamIndex(m_szTeamName) + 1); // Team index
+	if (g_pGameRules && g_pGameRules->AreAssistsEnabled())
+	{
+		// Optional trailing field: assists (clients that understand will read it)
+		WRITE_SHORT(m_iAssists);
+	}
+	MESSAGE_END();
 }
 
 //
