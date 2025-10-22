@@ -255,9 +255,12 @@ void ClientPutInServer(edict_t *pEntity)
 		pPlayer->m_bIsBot = true;
 	}
 
-	pPlayer->Spawn();
+    pPlayer->Spawn();
 
-	// Setup some fields initially
+    // Setup some fields initially
+    // Initialize assists on first put in server
+    pPlayer->m_iAssists = 0;
+    pPlayer->ResetAssistTracking();
 	pPlayer->m_fNextSuicideTime = 0;
 	pPlayer->m_iAutoWepSwitch = 1;
 

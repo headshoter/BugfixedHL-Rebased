@@ -855,17 +855,32 @@ int CBaseMonster ::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, f
 	// add to the damage total for clients, which will be sent as a single
 	// message at the end of the frame
 	// todo: remove after combining shotgun blasts?
-	if (IsPlayer())
-	{
-		if (pevInflictor)
-			pev->dmg_inflictor = ENT(pevInflictor);
+    if (IsPlayer())
+    {
+        if (pevInflictor)
+            pev->dmg_inflictor = ENT(pevInflictor);
 
-		pev->dmg_take += flTake;
+        pev->dmg_take += flTake;
 
-		// check for godmode or invincibility
-		if (pev->flags & FL_GODMODE)
-		{
-			return 0;
+        // Track per-attacker damage on players for assist calculation
+        if (pevAttacker && (pevAttacker->flags & FL_CLIENT))
+        {
+            int attackerIdx = ENTINDEX(ENT(pevAttacker));
+            if (attackerIdx >= 1 && attackerIdx <= gpGlobals->maxClients)
+            {
+                CBasePlayer *pVictimPlayer = static_cast<CBasePlayer *>(this);
+                // Do not count self-damage for assists
+                if (attackerIdx != ENTINDEX(edict()))
+                {
+                    pVictimPlayer->m_rgAssistDamage[attackerIdx] += flTake;
+                }
+            }
+        }
+
+        // check for godmode or invincibility
+        if (pev->flags & FL_GODMODE)
+        {
+            return 0;
 		}
 	}
 

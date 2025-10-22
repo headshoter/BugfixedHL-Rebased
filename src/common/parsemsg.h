@@ -36,6 +36,8 @@ float READ_COORD(void);
 float READ_ANGLE(void);
 float READ_HIRESANGLE(void);
 int READ_OK(void);
+// Returns number of unread bytes remaining in the current buffer.
+int READ_REMAINING(void);
 
 //--------------------------------------------------------------------------------------------------------------
 class BufferWriter

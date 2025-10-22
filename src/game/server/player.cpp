@@ -252,7 +252,8 @@ void LinkUserMessages(void)
 	gmsgInitHUD = REG_USER_MSG("InitHUD", 0); // called every time a new player joins the server
 	gmsgShowGameTitle = REG_USER_MSG("GameTitle", 1);
 	gmsgDeathMsg = REG_USER_MSG("DeathMsg", -1);
-	gmsgScoreInfo = REG_USER_MSG("ScoreInfo", 9);
+    // Allow variable payload length for future extensions (e.g., assists)
+    gmsgScoreInfo = REG_USER_MSG("ScoreInfo", -1);
 	gmsgTeamInfo = REG_USER_MSG("TeamInfo", -1); // sets the name of a player's team
 	gmsgTeamScore = REG_USER_MSG("TeamScore", -1); // sets the score of a team on the scoreboard
 	gmsgGameMode = REG_USER_MSG("GameMode", 1);
@@ -1662,13 +1663,15 @@ void CBasePlayer::StopWelcomeCam(void)
 
 void CBasePlayer::SendScoreInfo()
 {
-	MESSAGE_BEGIN(MSG_ALL, gmsgScoreInfo);
-	WRITE_BYTE(ENTINDEX(edict())); // Player index
-	WRITE_SHORT(pev->frags); // Score
-	WRITE_SHORT(m_iDeaths); // Deaths
-	WRITE_SHORT(0); // TFC class
-	WRITE_SHORT(g_pGameRules->GetTeamIndex(m_szTeamName) + 1); // Team index
-	MESSAGE_END();
+    MESSAGE_BEGIN(MSG_ALL, gmsgScoreInfo);
+    WRITE_BYTE(ENTINDEX(edict())); // Player index
+    WRITE_SHORT(pev->frags); // Score
+    WRITE_SHORT(m_iDeaths); // Deaths
+    WRITE_SHORT(0); // TFC class
+    WRITE_SHORT(g_pGameRules->GetTeamIndex(m_szTeamName) + 1); // Team index
+    // Optional trailing field: assists (clients that understand will read it)
+    WRITE_SHORT(m_iAssists);
+    MESSAGE_END();
 }
 
 //
@@ -3477,7 +3480,10 @@ void CBasePlayer::Spawn(void)
 	m_lastx = m_lasty = 0;
 
 	m_iChatFlood = 0;
-	m_flNextChatTime = 0; // Not using gpGlobals->time - see Host_Say
+    m_flNextChatTime = 0; // Not using gpGlobals->time - see Host_Say
+
+    // Reset assist tracking on every spawn
+    ResetAssistTracking();
 	m_flNextFullupdate[0] = gpGlobals->time;
 	m_flNextFullupdate[1] = gpGlobals->time;
 

@@ -163,16 +163,25 @@ int CHudDeathNotice::MsgFunc_DeathMsg(const char *pszName, int iSize, void *pbuf
 
 	BEGIN_READ(pbuf, iSize);
 
-	int killer = READ_BYTE();
-	int victim = READ_BYTE();
+    int killer = READ_BYTE();
+    int victim = READ_BYTE();
 
 	char killedwith[MAX_WEAPON_NAME];
 	V_strcpy_safe(killedwith, "d_");
 	strncat(killedwith, READ_STRING(), sizeof(killedwith) - 3);
 	killedwith[sizeof(killedwith) - 1] = 0;
 
-	if (g_pViewport)
-		g_pViewport->DeathMsg(killer, victim);
+    // Optional assister index at the end (server may append)
+    int assister = 0;
+    if (READ_REMAINING() > 0)
+    {
+        int v = READ_BYTE();
+        if (v >= 0)
+            assister = v;
+    }
+
+    if (g_pViewport)
+        g_pViewport->DeathMsg(killer, victim);
 
 	CHudSpectator::Get()->DeathMessage(victim);
 
@@ -194,9 +203,9 @@ int CHudDeathNotice::MsgFunc_DeathMsg(const char *pszName, int iSize, void *pbuf
 	if (g_pViewport)
 		g_pViewport->GetAllPlayersInfo();
 
-	// Get the Killer's name
-	CPlayerInfo *killerInfo = nullptr;
-	const char *killer_name;
+    // Get the Killer's name
+    CPlayerInfo *killerInfo = nullptr;
+    const char *killer_name;
 	if (killer != 0 && (killerInfo = GetPlayerInfoSafe(killer)))
 	{
 		killer_name = killerInfo->GetDisplayName();
@@ -211,8 +220,22 @@ int CHudDeathNotice::MsgFunc_DeathMsg(const char *pszName, int iSize, void *pbuf
 			gHUD.GetClientColorAsFloat(killer, rgDeathNoticeList[i].KillerColor, NoTeamColor::Orange);
 		}
 
-		strncpy(rgDeathNoticeList[i].szKiller, killer_name, MAX_PLAYERNAME_LENGTH);
-		rgDeathNoticeList[i].szKiller[MAX_PLAYERNAME_LENGTH - 1] = 0;
+        // Combine with assister name if present
+        if (assister > 0 && assister <= MAX_PLAYERS && assister != killer)
+        {
+            const char *assist_name = "";
+            if (auto *ai = GetPlayerInfoSafe(assister))
+                assist_name = ai->GetDisplayName();
+            char combo[MAX_PLAYERNAME_LENGTH * 2];
+            snprintf(combo, sizeof(combo), "%s + %s", killer_name, assist_name);
+            strncpy(rgDeathNoticeList[i].szKiller, combo, MAX_PLAYERNAME_LENGTH);
+            rgDeathNoticeList[i].szKiller[MAX_PLAYERNAME_LENGTH - 1] = 0;
+        }
+        else
+        {
+            strncpy(rgDeathNoticeList[i].szKiller, killer_name, MAX_PLAYERNAME_LENGTH);
+            rgDeathNoticeList[i].szKiller[MAX_PLAYERNAME_LENGTH - 1] = 0;
+        }
 	}
 	else
 	{

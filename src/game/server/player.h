@@ -203,7 +203,7 @@ public:
 	virtual int TakeHealth(float flHealth, int bitsDamageType);
 	virtual void TraceAttack(entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType);
 	virtual int TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType);
-	virtual void Killed(entvars_t *pevAttacker, int iGib);
+    virtual void Killed(entvars_t *pevAttacker, int iGib);
 	virtual Vector BodyTarget(const Vector &posSrc) { return Center() + pev->view_ofs * RANDOM_FLOAT(0.5, 1.1); }; // position to shoot at
 	virtual void StartSneaking(void) { m_tSneaking = gpGlobals->time - 1; }
 	virtual void StopSneaking(void) { m_tSneaking = gpGlobals->time + 30; }
@@ -357,7 +357,15 @@ public:
 	 * Sends a message to all clients with score of this player.
 	 * Should be called any time kills/deaths are updated.
 	 */
-	void SendScoreInfo();
+    void SendScoreInfo();
+    // Assists tracking
+    int m_iAssists = 0; // Total assists credited to this player
+    float m_rgAssistDamage[MAX_PLAYERS + 1] = {0}; // Damage this player received from each attacker during current life
+    void ResetAssistTracking()
+    {
+        for (int i = 0; i <= MAX_PLAYERS; ++i)
+            m_rgAssistDamage[i] = 0.0f;
+    }
 };
 
 #define AUTOAIM_2DEGREES  0.0348994967025

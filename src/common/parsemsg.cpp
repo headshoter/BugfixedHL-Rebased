@@ -29,7 +29,15 @@ static int giBadRead;
 
 int READ_OK(void)
 {
-	return !giBadRead;
+    return !giBadRead;
+}
+
+int READ_REMAINING(void)
+{
+    if (!gpBuf)
+        return 0;
+    int rem = giSize - giRead;
+    return rem > 0 ? rem : 0;
 }
 
 void BEGIN_READ(void *buf, int size, int readpos)

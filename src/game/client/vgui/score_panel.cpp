@@ -507,15 +507,20 @@ void CScorePanel::CreateSection(int nTeamID)
 		    m_iColumnWidthEff);
 	}
 
-	// Frags
-	m_pPlayerList->AddColumnToSection(nTeamID, "frags", nTeamID == HEADER_SECTION_ID ? "#PlayerScore" : "???",
-	    vgui2::SectionedListPanel::COLUMN_BRIGHT,
-	    m_iColumnWidthFrags);
+    // Frags
+    m_pPlayerList->AddColumnToSection(nTeamID, "frags", nTeamID == HEADER_SECTION_ID ? "#PlayerScore" : "???",
+        vgui2::SectionedListPanel::COLUMN_BRIGHT,
+        m_iColumnWidthFrags);
 
-	// Deaths
-	m_pPlayerList->AddColumnToSection(nTeamID, "deaths", nTeamID == HEADER_SECTION_ID ? "#PlayerDeath" : "???",
-	    vgui2::SectionedListPanel::COLUMN_BRIGHT,
-	    m_iColumnWidthDeaths);
+    // Assists (new)
+    m_pPlayerList->AddColumnToSection(nTeamID, "assists", nTeamID == HEADER_SECTION_ID ? "A" : "",
+        vgui2::SectionedListPanel::COLUMN_BRIGHT,
+        m_iColumnWidthDeaths);
+
+    // Deaths
+    m_pPlayerList->AddColumnToSection(nTeamID, "deaths", nTeamID == HEADER_SECTION_ID ? "#PlayerDeath" : "???",
+        vgui2::SectionedListPanel::COLUMN_BRIGHT,
+        m_iColumnWidthDeaths);
 
 	// Ping
 	const char *pingLabel;
@@ -625,7 +630,8 @@ void CScorePanel::UpdateClientInfo(int client)
 		playerKv->SetString("eff", buf);
 
 		// Frags & deaths
-		playerKv->SetInt("frags", pi->GetFrags());
+        playerKv->SetInt("frags", pi->GetFrags());
+        playerKv->SetInt("assists", pi->GetAssists());
 		playerKv->SetInt("deaths", pi->GetDeaths());
 
 		// Ping

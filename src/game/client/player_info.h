@@ -20,13 +20,14 @@ typedef struct player_info_s player_info_t;
 
 struct extra_player_info_t
 {
-	short frags;
-	short deaths;
-	short playerclass;
-	short health; // UNUSED currently, spectator UI would like this
-	bool dead; // UNUSED currently, spectator UI would like this
-	short teamnumber;
-	char teamname[MAX_TEAM_NAME];
+    short frags;
+    short deaths;
+    short playerclass;
+    short health; // UNUSED currently, spectator UI would like this
+    bool dead; // UNUSED currently, spectator UI would like this
+    short teamnumber;
+    char teamname[MAX_TEAM_NAME];
+    short assists = 0; // New: number of assists
 };
 
 //-----------------------------------------------------
@@ -61,9 +62,10 @@ public:
 	// Extra info (from HUD messages)
 	int GetFrags();
 	int GetDeaths();
-	int GetPlayerClass();
-	int GetTeamNumber();
-	const char *GetTeamName();
+    int GetPlayerClass();
+    int GetTeamNumber();
+    const char *GetTeamName();
+    int GetAssists();
 	bool IsSpectator();
 
 	/**

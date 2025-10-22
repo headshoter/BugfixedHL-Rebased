@@ -311,20 +311,26 @@ int CPlayerInfo::GetDeaths()
 
 int CPlayerInfo::GetPlayerClass()
 {
-	Assert(m_bIsConnected);
-	return m_ExtraInfo.playerclass;
+    Assert(m_bIsConnected);
+    return m_ExtraInfo.playerclass;
 }
 
 int CPlayerInfo::GetTeamNumber()
 {
-	Assert(m_bIsConnected);
-	return m_ExtraInfo.teamnumber;
+    Assert(m_bIsConnected);
+    return m_ExtraInfo.teamnumber;
 }
 
 const char *CPlayerInfo::GetTeamName()
 {
-	Assert(m_bIsConnected);
-	return m_ExtraInfo.teamname;
+    Assert(m_bIsConnected);
+    return m_ExtraInfo.teamname;
+}
+
+int CPlayerInfo::GetAssists()
+{
+    Assert(m_bIsConnected);
+    return m_ExtraInfo.assists;
 }
 
 bool CPlayerInfo::IsSpectator()

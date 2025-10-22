@@ -720,9 +720,9 @@ void CHalfLifeMultiplay ::PlayerKilled(CBasePlayer *pVictim, entvars_t *pKiller,
 		pKiller->frags -= 1;
 	}
 
-	// update the scores
-	// killed scores
-	pVictim->SendScoreInfo();
+    // update the scores
+    // killed scores
+    pVictim->SendScoreInfo();
 
 	// killers score, if it's a player
 	CBaseEntity *ep = CBaseEntity::Instance(pKiller);
@@ -790,11 +790,53 @@ void CHalfLifeMultiplay::DeathNotice(CBasePlayer *pVictim, entvars_t *pKiller, e
 	else if (strncmp(killer_weapon_name, "func_", 5) == 0)
 		killer_weapon_name += 5;
 
-	MESSAGE_BEGIN(MSG_ALL, gmsgDeathMsg);
-	WRITE_BYTE(killer_index); // the killer
-	WRITE_BYTE(ENTINDEX(pVictim->edict())); // the victim
-	WRITE_STRING(killer_weapon_name); // what they were killed by (should this be a string?)
-	MESSAGE_END();
+    // Determine assister (highest damage dealer besides killer above threshold)
+    int assister_index = 0;
+    if (pVictim)
+    {
+        // Threshold is percent of max health
+        static ConVar mp_assist_threshold("mp_assist_threshold", "0.6", FCVAR_SERVER, "Assist damage threshold as fraction of victim max health");
+        float threshold = clamp(mp_assist_threshold.GetFloat(), 0.0f, 1.0f) * pVictim->pev->max_health;
+
+        float bestDamage = 0.0f;
+        for (int i = 1; i <= gpGlobals->maxClients; ++i)
+        {
+            if (i == killer_index)
+                continue;
+            float dmg = pVictim->m_rgAssistDamage[i];
+            if (dmg > bestDamage)
+            {
+                bestDamage = dmg;
+                assister_index = i;
+            }
+        }
+
+        if (bestDamage < threshold)
+        {
+            assister_index = 0;
+        }
+        else if (assister_index != 0)
+        {
+            // Credit assist
+            CBasePlayer *pAssister = (CBasePlayer *)UTIL_PlayerByIndex(assister_index);
+            if (pAssister)
+            {
+                pAssister->m_iAssists += 1;
+                pAssister->SendScoreInfo();
+            }
+        }
+
+        // Reset victim's assist tracking on death
+        pVictim->ResetAssistTracking();
+    }
+
+    MESSAGE_BEGIN(MSG_ALL, gmsgDeathMsg);
+    WRITE_BYTE(killer_index); // the killer
+    WRITE_BYTE(ENTINDEX(pVictim->edict())); // the victim
+    WRITE_STRING(killer_weapon_name); // what they were killed by (should this be a string?)
+    // Optional assister index at the end for clients that support it
+    WRITE_BYTE(assister_index);
+    MESSAGE_END();
 
 	// replace the code names with the 'real' names
 	if (!strcmp(killer_weapon_name, "egon"))
