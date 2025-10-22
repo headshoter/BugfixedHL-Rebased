@@ -217,6 +217,7 @@ public:
 	virtual void PlayerKilled(CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor);
 	virtual void DeathNotice(CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor);
 	virtual bool AreAssistsEnabled() const override;
+	virtual bool AreAssistsEnabled() const override;
 
 	// Weapon retrieval
 	virtual void PlayerGotWeapon(CBasePlayer *pPlayer, CBasePlayerItem *pWeapon);
