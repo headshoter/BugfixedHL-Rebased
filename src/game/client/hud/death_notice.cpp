@@ -17,6 +17,7 @@
 //
 #include <string.h>
 #include <stdio.h>
+#include <event_api.h>
 
 #include "hud.h"
 #include "cl_util.h"
@@ -50,6 +51,10 @@ ConVar hud_deathnotice_color_tk("hud_deathnotice_color_tk", "10 240 10", FCVAR_B
 ConVar hud_deathnotice_draw_always("hud_deathnotice_draw_always", "0", FCVAR_BHL_ARCHIVE, "Display the kill feed even when hud_draw is 0. Useful when recording frag movies.");
 
 static constexpr int ASSIST_SOUND_PITCH = PITCH_NORM + 20;
+
+#ifndef SND_CHANGE_PITCH
+#define SND_CHANGE_PITCH (1 << 7)
+#endif
 
 static void PlayKillfeedSoundWithPitch(const char *sample, float volume, int pitch)
 {
